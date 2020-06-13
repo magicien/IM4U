@@ -1,7 +1,3 @@
-// Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
-
-// Copyright 2017- BlackMa9. All Rights Reserved.
-
 #include "VmdOptionWindow.h"
 #include "IM4UPrivatePCH.h"
 
@@ -113,24 +109,6 @@ void SVmdOptionWindow::Construct(const FArguments& InArgs)
 
 bool SVmdOptionWindow::CanImport()  const
 {
-#if 0
-	// do test to see if we are ready to import
-	if (ImportUI->MeshTypeToImport == PMXIT_Animation)
-	{
-		if (ImportUI->Skeleton == NULL || !ImportUI->bImportAnimations)
-		{
-			return false;
-		}
-	}
-
-	if (ImportUI->AnimSequenceImportData->AnimationLength == FBXALIT_SetRange)
-	{
-		if (ImportUI->AnimSequenceImportData->StartFrame > ImportUI->AnimSequenceImportData->EndFrame)
-		{
-			return false;
-		}
-	}
-#endif
 	return true;
 }
 

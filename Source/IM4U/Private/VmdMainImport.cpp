@@ -1,23 +1,13 @@
-// Copyright 2017- BlackMa9. All Rights Reserved.
-
-/*=============================================================================
-Main implementation of FFbxImporter : import FBX data to Unreal
-=============================================================================*/
-
 #include "IM4UPrivatePCH.h"
 
 #include "CoreMinimal.h"
-//#include "FeedbackContextEditor.h"
 
 #include "Factories.h"
 #include "Engine.h"
 #include "SkelImport.h"
-//#include "FbxErrors.h"
 #include "VmdImporter.h"
 #include "Factory/VmdFactory.h"
-//#include "FbxOptionWindow.h"
 #include "VmdOptionWindow.h"
-//#include "FbxErrors.h"
 #include "MainFrame.h"
 #include "EngineAnalytics.h"
 #include "Runtime/Analytics/Analytics/Public/Interfaces/IAnalyticsProvider.h"
@@ -25,11 +15,7 @@ Main implementation of FFbxImporter : import FBX data to Unreal
 #include "MMDSkeletalMeshImportData.h"
 #include "MMDStaticMeshImportData.h"
 
-//DEFINE_LOG_CATEGORY(LogPmx);
-
 #define LOCTEXT_NAMESPACE "VmdMainImport"
-
-//TSharedPtr<PmxMeshInfo> PmxMeshInfo::StaticInstance;
 
 VMDImportOptions* GetVMDImportOptions(
 	class FVmdImporter* VmdImporter,
@@ -177,15 +163,6 @@ void ApplyVMDImportUIToImportOptions(
 	InOutImportOptions.SkeletonForAnimation = ImportUI->Skeleton;
 	InOutImportOptions.SkeletalMeshForAnimation = ImportUI->SkeletonMesh;
 
-#if 0
-	// animation options
-	InOutImportOptions.AnimationLengthImportType = ImportUI->AnimSequenceImportData->AnimationLength;
-	InOutImportOptions.AnimationRange.X = ImportUI->AnimSequenceImportData->StartFrame;
-	InOutImportOptions.AnimationRange.Y = ImportUI->AnimSequenceImportData->EndFrame;
-	InOutImportOptions.AnimationName = ImportUI->AnimationName;
-	InOutImportOptions.bPreserveLocalTransform = ImportUI->bPreserveLocalTransform;
-	InOutImportOptions.bImportCustomAttribute = ImportUI->AnimSequenceImportData->bImportCustomAttribute;
-#endif
 	//add self
 	InOutImportOptions.AnimSequenceAsset = ImportUI->AnimSequenceAsset;
 	InOutImportOptions.MMD2UE4NameTableRow = ImportUI->MMD2UE4NameTableRow;
@@ -197,8 +174,7 @@ void ApplyVMDImportUIToImportOptions(
 TSharedPtr<FVmdImporter> FVmdImporter::StaticInstance;
 ////////////////////////////////////////////
 FVmdImporter::FVmdImporter()
-	:/* Scene(NULL)
-	, */ImportOptions(NULL)
+	: ImportOptions(NULL)
 {
 	ImportOptions = new VMDImportOptions();
 	FMemory::Memzero(*ImportOptions);
@@ -234,23 +210,8 @@ void FVmdImporter::DeleteInstance()
 //-------------------------------------------------------------------------
 void FVmdImporter::CleanUp()
 {
-#if 0
-	ClearTokenizedErrorMessages();
-	ReleaseScene();
-
-	delete GeometryConverter;
-	GeometryConverter = NULL;
-#endif
 	delete ImportOptions;
 	ImportOptions = NULL;
-#if 0
-	if (SdkManager)
-	{
-		SdkManager->Destroy();
-	}
-	SdkManager = NULL;
-	Logger = NULL;
-#endif
 }
 
 VMDImportOptions* FVmdImporter::GetImportOptions() const
@@ -263,13 +224,6 @@ VMDImportOptions* FVmdImporter::GetImportOptions() const
 UVmdImportUI::UVmdImportUI(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)//, MMD2UE4NameTableRow(MMD2UE4NameTableRowDmmy)
 {
-#if 0
-	StaticMeshImportData = CreateDefaultSubobject<UMMDStaticMeshImportData>(TEXT("StaticMeshImportData"));
-	SkeletalMeshImportData = CreateDefaultSubobject<UMMDSkeletalMeshImportData>(TEXT("SkeletalMeshImportData"));
-	/*AnimSequenceImportData = CreateDefaultSubobject<UFbxAnimSequenceImportData>(TEXT("AnimSequenceImportData"));
-	TextureImportData = CreateDefaultSubobject<UFbxTextureImportData>(TEXT("TextureImportData"));
-	*/
-#endif
 }
 
 

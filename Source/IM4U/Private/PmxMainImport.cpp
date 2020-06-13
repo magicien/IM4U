@@ -1,23 +1,13 @@
-// Copyright 2015 BlackMa9. All Rights Reserved.
-
-/*=============================================================================
-Main implementation of FFbxImporter : import FBX data to Unreal
-=============================================================================*/
-
 #include "IM4UPrivatePCH.h"
 
 #include "CoreMinimal.h"
-//#include "FeedbackContextEditor.h"
 
 #include "Factories.h"
 #include "Engine.h"
 #include "SkelImport.h"
-//#include "FbxErrors.h"
 #include "PmxImporter.h"
 #include "PmxFactory.h"
-//#include "FbxOptionWindow.h"
 #include "PmxOptionWindow.h"
-//#include "FbxErrors.h"
 #include "MainFrame.h"
 #include "EngineAnalytics.h"
 #include "Runtime/Analytics/Analytics/Public/Interfaces/IAnalyticsProvider.h"
@@ -25,11 +15,7 @@ Main implementation of FFbxImporter : import FBX data to Unreal
 #include "MMDSkeletalMeshImportData.h"
 #include "MMDStaticMeshImportData.h"
 
-//DEFINE_LOG_CATEGORY(LogPmx);
-
 #define LOCTEXT_NAMESPACE "PmxMainImport"
-
-//TSharedPtr<PmxMeshInfo> PmxMeshInfo::StaticInstance;
 
 PMXImportOptions* GetImportOptions(
 	class FPmxImporter* PmxImporter,
@@ -142,17 +128,7 @@ PMXImportOptions* GetImportOptions(
 		{
 			ImportUI->SkeletalMeshImportData->SaveConfig();
 		}
-#if 0
-		if (ImportUI->AnimSequenceImportData)
-		{
-			ImportUI->AnimSequenceImportData->SaveConfig();
-		}
 
-		if (ImportUI->TextureImportData)
-		{
-			ImportUI->TextureImportData->SaveConfig();
-		}
-#endif
 		if (PmxOptionWindow->ShouldImport())
 		{
 			bOutImportAll = PmxOptionWindow->ShouldImportAll();
@@ -216,25 +192,6 @@ void ApplyImportUIToImportOptions(
 		InOutImportOptions.ImportTranslation = SkeletalMeshData->ImportTranslation;
 		InOutImportOptions.ImportRotation = SkeletalMeshData->ImportRotation;
 		InOutImportOptions.ImportUniformScale = SkeletalMeshData->ImportUniformScale;
-
-#if 0
-		if (ImportUI->bImportAnimations)
-		{
-			// Copy the transform information into the animation data to match the mesh.
-			UFbxAnimSequenceImportData* AnimData = ImportUI->AnimSequenceImportData;
-			AnimData->ImportTranslation = SkeletalMeshData->ImportTranslation;
-			AnimData->ImportRotation = SkeletalMeshData->ImportRotation;
-			AnimData->ImportUniformScale = SkeletalMeshData->ImportUniformScale;
-		}
-	}
-	else
-	{
-		UFbxAnimSequenceImportData* AnimData = ImportUI->AnimSequenceImportData;
-		InOutImportOptions.NormalImportMethod = FBXNIM_ComputeNormals;
-		InOutImportOptions.ImportTranslation = AnimData->ImportTranslation;
-		InOutImportOptions.ImportRotation = AnimData->ImportRotation;
-		InOutImportOptions.ImportUniformScale = AnimData->ImportUniformScale;
-#endif
 	}
 	//add self pre over write..
 	ImportUI->SkeletalMeshImportData->bImportMorphTargets = ImportUI->bImportMorphTargets;
@@ -257,15 +214,7 @@ void ApplyImportUIToImportOptions(
 	InOutImportOptions.bImportMeshesInBoneHierarchy = ImportUI->SkeletalMeshImportData->bImportMeshesInBoneHierarchy;
 	InOutImportOptions.bCreatePhysicsAsset = ImportUI->bCreatePhysicsAsset;
 	InOutImportOptions.PhysicsAsset = ImportUI->PhysicsAsset;
-#if 0
-	// animation options
-	InOutImportOptions.AnimationLengthImportType = ImportUI->AnimSequenceImportData->AnimationLength;
-	InOutImportOptions.AnimationRange.X = ImportUI->AnimSequenceImportData->StartFrame;
-	InOutImportOptions.AnimationRange.Y = ImportUI->AnimSequenceImportData->EndFrame;
-	InOutImportOptions.AnimationName = ImportUI->AnimationName;
-	InOutImportOptions.bPreserveLocalTransform = ImportUI->bPreserveLocalTransform;
-	InOutImportOptions.bImportCustomAttribute = ImportUI->AnimSequenceImportData->bImportCustomAttribute;
-#endif
+
 	//add self
 	InOutImportOptions.AnimSequenceAsset = ImportUI->AnimSequenceAsset;
 	InOutImportOptions.MMD2UE4NameTableRow = ImportUI->MMD2UE4NameTableRow;
@@ -275,33 +224,10 @@ void ApplyImportUIToImportOptions(
 TSharedPtr<FPmxImporter> FPmxImporter::StaticInstance;
 ////////////////////////////////////////////
 FPmxImporter::FPmxImporter()
-	:/* Scene(NULL)
-	, */ImportOptions(NULL)
-	/*
-	, GeometryConverter(NULL)
-	, SdkManager(NULL)
-	, Importer(NULL)
-	, bFirstMesh(true)
-	, Logger(NULL)
-	*/
+	: ImportOptions(NULL)
 {
-#if 0
-	// Create the SdkManager
-	SdkManager = FbxManager::Create();
-
-	// create an IOSettings object
-	FbxIOSettings * ios = FbxIOSettings::Create(SdkManager, IOSROOT);
-	SdkManager->SetIOSettings(ios);
-
-	// Create the geometry converter
-	GeometryConverter = new FbxGeometryConverter(SdkManager);
-	Scene = NULL;
-
-	CurPhase = NOTSTARTED;
-#endif
 	ImportOptions = new PMXImportOptions();
 	FMemory::Memzero(*ImportOptions);
-
 }
 
 //-------------------------------------------------------------------------
@@ -334,23 +260,8 @@ void FPmxImporter::DeleteInstance()
 //-------------------------------------------------------------------------
 void FPmxImporter::CleanUp()
 {
-#if 0
-	ClearTokenizedErrorMessages();
-	ReleaseScene();
-
-	delete GeometryConverter;
-	GeometryConverter = NULL;
-#endif
 	delete ImportOptions;
 	ImportOptions = NULL;
-#if 0
-	if (SdkManager)
-	{
-		SdkManager->Destroy();
-	}
-	SdkManager = NULL;
-	Logger = NULL;
-#endif
 }
 
 PMXImportOptions* FPmxImporter::GetImportOptions() const
@@ -367,9 +278,6 @@ UPmxImportUI::UPmxImportUI(const FObjectInitializer& ObjectInitializer)
 
 	StaticMeshImportData = CreateDefaultSubobject<UMMDStaticMeshImportData>(TEXT("StaticMeshImportData"));
 	SkeletalMeshImportData = CreateDefaultSubobject<UMMDSkeletalMeshImportData>(TEXT("SkeletalMeshImportData"));
-	/*AnimSequenceImportData = CreateDefaultSubobject<UFbxAnimSequenceImportData>(TEXT("AnimSequenceImportData"));
-	TextureImportData = CreateDefaultSubobject<UFbxTextureImportData>(TEXT("TextureImportData"));
-	*/
 }
 
 
@@ -382,7 +290,6 @@ bool UPmxImportUI::CanEditChange(const UProperty* InProperty) const
 
 		if (PropName == TEXT("StartFrame") || PropName == TEXT("EndFrame"))
 		{
-			//bIsMutable = AnimSequenceImportData->AnimationLength == FBXALIT_SetRange && bImportAnimations;
 		}
 		else if (PropName == TEXT("bImportCustomAttribute") || PropName == TEXT("AnimationLength"))
 		{

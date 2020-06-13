@@ -1,7 +1,3 @@
-// Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
-
-// Copyright 2015 BlackMa9. All Rights Reserved.
-
 #include "PmxOptionWindow.h"
 #include "IM4UPrivatePCH.h"
 
@@ -113,24 +109,6 @@ void SPmxOptionWindow::Construct(const FArguments& InArgs)
 
 bool SPmxOptionWindow::CanImport()  const
 {
-#if 0
-	// do test to see if we are ready to import
-	if (ImportUI->MeshTypeToImport == PMXIT_Animation)
-	{
-		if (ImportUI->Skeleton == NULL || !ImportUI->bImportAnimations)
-		{
-			return false;
-		}
-	}
-
-	if (ImportUI->AnimSequenceImportData->AnimationLength == FBXALIT_SetRange)
-	{
-		if (ImportUI->AnimSequenceImportData->StartFrame > ImportUI->AnimSequenceImportData->EndFrame)
-		{
-			return false;
-		}
-	}
-#endif
 	return true;
 }
 

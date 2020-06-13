@@ -71,15 +71,13 @@ namespace UnrealBuildTool.Rules
 			
 			
 			PublicIncludePaths.AddRange(
-                new string[] {
-					// ... add public include paths required here ...
+        new string[] {
 				}
 				);
 
 			PrivateIncludePaths.AddRange(
 				new string[] {
 					"IM4U/Private"
-					// ... add other private include paths required here ...
 				}
 				);
 
@@ -98,10 +96,9 @@ namespace UnrealBuildTool.Rules
 					"MessageLog",
 					"MainFrame",
 					"PropertyEditor",
-                    "RHI",
-                    "RenderCore",
-                    "ContentBrowser",
-					// ... add other public dependencies that you statically link with here ...
+          "RHI",
+          "RenderCore",
+          "ContentBrowser",
 				}
 				);
 
@@ -110,15 +107,13 @@ namespace UnrealBuildTool.Rules
 				{
 					"EditorStyle",
 					"EditorWidgets"
-					// ... add private dependencies that you statically link with here ...
 				}
 				);
 
 			DynamicallyLoadedModuleNames.AddRange(
 				new string[]
-                {
-                    "AssetRegistry",
-					// ... add any modules that your module loads dynamically here ...
+        {
+          "AssetRegistry",
 				}
 				);
 		}

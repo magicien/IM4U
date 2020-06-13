@@ -1,5 +1,3 @@
-// Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
-
 #include "MMDSkeletalMeshImportData.h"
 #include "IM4UPrivatePCH.h"
 #include "CoreMinimal.h"
