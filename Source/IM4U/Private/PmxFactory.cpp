@@ -132,51 +132,14 @@ UObject* UPmxFactory::FactoryCreateBinary
 	if (bOperationCanceled)
 	{
 		bOutOperationCanceled = true;
-		FEditorDelegates::OnAssetPostImport.Broadcast(this, NULL);
+		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
 		return NULL;
 	}
 
-	FEditorDelegates::OnAssetPreImport.Broadcast(this, Class, InParent, Name, Type);
+	GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPreImport.Broadcast(this, Class, InParent, Name, Type);
 
 	UObject* NewObject = NULL;
 
-#ifdef DEBUG_MMD_UE4_ORIGINAL_CODE
-	if (bDetectImportTypeOnImport)
-	{
-		if (!DetectImportType(UFactory::CurrentFilename))
-		{
-			// Failed to read the file info, fail the import
-			FEditorDelegates::OnAssetPostImport.Broadcast(this, NULL);
-			return NULL;
-		}
-	}
-
-	// logger for all error/warnings
-	// this one prints all messages that are stored in FFbxImporter
-	UnFbx::FFbxImporter* FbxImporter = UnFbx::FFbxImporter::GetInstance();
-
-	UnFbx::FFbxLoggerSetter Logger(FbxImporter);
-
-	EFBXImportType ForcedImportType = FBXIT_StaticMesh;
-
-	bool bIsObjFormat = false;
-	if (FString(Type).Equals(TEXT("obj"), ESearchCase::IgnoreCase))
-	{
-		bIsObjFormat = true;
-	}
-
-
-	bool bShowImportDialog = bShowOption && !GIsAutomationTesting;
-	bool bImportAll = false;
-	UnFbx::FBXImportOptions* ImportOptions = GetImportOptions(FbxImporter, ImportUI, bShowImportDialog, InParent->GetPathName(), bOperationCanceled, bImportAll, bIsObjFormat, bIsObjFormat, ForcedImportType);
-	bOutOperationCanceled = bOperationCanceled;
-
-	if (bImportAll)
-	{
-		// If the user chose to import all, we don't show the dialog again and use the same settings for each object until importing another set of files
-		bShowOption = false;
-	}
-#endif
 	FPmxImporter* PmxImporter = FPmxImporter::GetInstance();
 
 	EPMXImportType ForcedImportType = PMXIT_StaticMesh;
@@ -214,7 +177,7 @@ UObject* UPmxFactory::FactoryCreateBinary
 	{
 		// Log the error message and fail the import.
 		Warn->Log(ELogVerbosity::Error, "PMX Import ERR...FLT");
-		FEditorDelegates::OnAssetPostImport.Broadcast(this, NULL);
+		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
 		return NULL;
 	}
 	else
@@ -227,7 +190,7 @@ UObject* UPmxFactory::FactoryCreateBinary
 			FText::FromString(pmxMeshInfoPtr.modelNameJP), FText::FromString(pmxMeshInfoPtr.modelCommentJP));
 		if (EAppReturnType::Ok != FMessageDialog::Open(EAppMsgType::OkCancel, Message))
 		{
-			FEditorDelegates::OnAssetPostImport.Broadcast(this, NULL);
+			GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
 			return NULL;
 		}
 		TitleStr = FText::Format(LOCTEXT("ImportReadMe_Generic_Dbg", "{0} 制限事項"), FText::FromString("IM4U Plugin"));
@@ -406,7 +369,7 @@ UObject* UPmxFactory::FactoryCreateBinary
 		//UE_LOG(LogAssetTools, Warning, TEXT("%s"), *Message.ToString());
 	}
 
-	FEditorDelegates::OnAssetPostImport.Broadcast(this, NewObject);
+	GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NewObject);
 
 	return NewObject;
 }
@@ -548,7 +511,7 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 	FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
 	check(ImportedResource->LODModels.Num() == 0);
 	ImportedResource->LODModels.Empty();
-	new(ImportedResource->LODModels)FSkeletalMeshLODModel();
+	ImportedResource->LODModels.Add(new FSkeletalMeshLODModel());
 
 	SkeletalMesh->ResetLODInfo();
 	FSkeletalMeshLODInfo & NewLODInfo = SkeletalMesh->AddLODInfo();

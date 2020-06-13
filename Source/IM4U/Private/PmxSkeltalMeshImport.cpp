@@ -901,15 +901,15 @@ void UPmxFactory::ImportMorphTargetsInternal(
 			TempMeshes.Add(TmpSkeletalMesh);
 			MorphTargets.Add(Result);
 
-			
 			// Process the skeletal mesh on a separate thread
 			FAsyncTask<FAsyncImportMorphTargetWork>* NewWork
-				= new (PendingWork)FAsyncTask<FAsyncImportMorphTargetWork>(
+				= new FAsyncTask<FAsyncImportMorphTargetWork>(
 					TmpSkeletalMesh,
 					LODIndex,
 					ImportData,
 					true// ImportOptions->bKeepOverlappingVertices
 					);
+			PendingWork.Add(NewWork);
 			NewWork->StartBackgroundTask();
 			
 			++ShapeIndex;

@@ -7,6 +7,7 @@
 #include "AssetRegistryModule.h"
 #include "AssetToolsModule.h"
 #include "Developer/AssetTools/Public/IAssetTools.h"
+#include "Subsystems/ImportSubsystem.h"
 
 #include "PackageTools.h"
 #include "RawMesh.h"
@@ -68,22 +69,14 @@ UObject* UMyUObjectTestClsFactory::FactoryCreateBinary(
 	FFeedbackContext * Warn
 	)
 {
-	//bool endianChk = IsLittleEndian();
-	
-	// FEditorDelegates will be deprecated in the next engine update, in the future need to create a Pointer to UEditorSubsystem
-	// and need to include #include "Subsystems/ImportSubsystem.h"
-
-	// UEditorSubsystemPtr::BroadcastAssetPreImport(this, InClass, InParent, InName, Type);
-	FEditorDelegates::OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
+	GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
 
 	check(InClass == UMyUObjectTestCls::StaticClass());
 
 	UMyUObjectTestCls* NewMyAsset = NULL;
 	
-	
 	NewMyAsset = NewObject<UMyUObjectTestCls>(InParent, InClass, InName, Flags);
 
-	//PMXEncodeType pmxEncodeType = PMXEncodeType_ERROR;
 	pmxMaterialImport.InitializeBaseValue(InParent);
 
 	bool bIsPmxFormat = false;
@@ -103,10 +96,7 @@ UObject* UMyUObjectTestClsFactory::FactoryCreateBinary(
 		UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMD Import Header Complete."));
 		///////////
 		//PMX
-		FEditorDelegates::OnAssetPostImport.Broadcast(this, NewMyAsset);
-#if 0
-		SPMXHeader BufferPMXHeaderPtr__Impl;
-#endif
+		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NewMyAsset);
 		int NodeIndex = 0;
 		int NodeIndexMax = 0;
 		//MMD4UE4::PmxMeshInfo pmxMeshInfoPtr;
@@ -183,14 +173,13 @@ UObject* UMyUObjectTestClsFactory::FactoryCreateBinary(
 			);
 		UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMX Import Static Mesh Complete."));
 
-		//if (NewObject)
-		{
-			NodeIndex++;
-			FFormatNamedArguments Args;
-			Args.Add(TEXT("NodeIndex"), NodeIndex);
-			Args.Add(TEXT("ArrayLength"), NodeIndexMax);// SkelMeshArray.Num());
-			GWarn->StatusUpdate(NodeIndex, NodeIndexMax, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
-		}
+
+		NodeIndex++;
+		FFormatNamedArguments Args;
+		Args.Add(TEXT("NodeIndex"), NodeIndex);
+		Args.Add(TEXT("ArrayLength"), NodeIndexMax);// SkelMeshArray.Num());
+		GWarn->StatusUpdate(NodeIndex, NodeIndexMax, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
+		
 		UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMX Import ALL Complete.[%s]"), *(NewMyAsset->MyStruct.ModelName));
 		//////////////////////////////////////////////////
 		UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMD Import ALL Complete.[FileName--PMD]"));
@@ -198,7 +187,7 @@ UObject* UMyUObjectTestClsFactory::FactoryCreateBinary(
 	else
 	{
 		//PMX
-		FEditorDelegates::OnAssetPostImport.Broadcast(this, NewMyAsset);
+		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NewMyAsset);
 
 		int NodeIndex = 0;
 		int NodeIndexMax = 0;
@@ -282,6 +271,7 @@ UObject* UMyUObjectTestClsFactory::FactoryCreateBinary(
 
 		UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMX Import ALL Complete.[%s]"), *(NewMyAsset->MyStruct.ModelName));
 	}
+
 	return NewMyAsset;
 }
 
@@ -306,7 +296,6 @@ UStaticMesh* UMyUObjectTestClsFactory::CreateStaticMeshFromBrush(
 	UStaticMesh* StaticMesh = CreateStaticMesh(RawMesh, Materials, Outer, Name);
 
 	return StaticMesh;
-
 }
 
 //
@@ -427,10 +416,10 @@ UStaticMesh* UMyUObjectTestClsFactory::CreateStaticMesh(
 	//FStaticMeshComponentRecreateRenderStateContext RecreateRenderStateContext(FindObject<UStaticMesh>(InOuter, *InName.ToString()));
 	auto StaticMesh = NewObject<UStaticMesh>(InOuter, InName, RF_Public | RF_Standalone);
 
-	FEditorDelegates::OnAssetPostImport.Broadcast(this, StaticMesh);
+	GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, StaticMesh);
 
 	// Add one LOD for the base mesh
-	FStaticMeshSourceModel* SrcModel = new(StaticMesh->SourceModels) FStaticMeshSourceModel();
+	FStaticMeshSourceModel *SrcModel = new (StaticMesh->GetSourceModels()) FStaticMeshSourceModel();
 	SrcModel->RawMeshBulkData->SaveRawMesh(RawMesh);
 	//StaticMesh->Materials = Materials;
 
@@ -445,10 +434,10 @@ UStaticMesh* UMyUObjectTestClsFactory::CreateStaticMesh(
 	// Set up the SectionInfoMap to enable collision
 	for (int32 SectionIdx = 0; SectionIdx < NumSections; ++SectionIdx)
 	{
-		FMeshSectionInfo Info = StaticMesh->SectionInfoMap.Get(0, SectionIdx);
+		FMeshSectionInfo Info = StaticMesh->GetSectionInfoMap().Get(0, SectionIdx);
 		Info.MaterialIndex = SectionIdx;
 		Info.bEnableCollision = true;
-		StaticMesh->SectionInfoMap.Set(0, SectionIdx, Info);
+		StaticMesh->GetSectionInfoMap().Set(0, SectionIdx, Info);
 	}
 	// @todo This overrides restored values currently 
 	// but we need to be able to import over the existing settings 
