@@ -913,6 +913,11 @@ void UPmxFactory::ImportMorphTargetsInternal(
 		FPlatformProcess::Sleep(0.1f);
 	} while (NumCompleted < NumTasks);
 
+	BaseSkelMesh->SetLODImportedDataVersions(0,
+		ESkeletalMeshGeoImportVersions::SkeletalMeshBuildRefactor,
+		ESkeletalMeshSkinningImportVersions::SkeletalMeshBuildRefactor);
+	BaseSkelMesh->UseLegacyMeshDerivedDataKey = true;
+
 	// Create morph streams for each morph target we are importing.
 	// This has to happen on a single thread since the skeletal meshes' bulk data is locked and cant be accessed by multiple threads simultaneously
 	for (int32 Index = 0; Index < TempMeshes.Num(); Index++)
