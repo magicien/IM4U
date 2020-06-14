@@ -229,6 +229,7 @@ namespace MMD4UE4
 				TEXT("PMX Import [Vertex:: statics bone type, sdef = %u] Complete"), statics_sdef);
 		}
 		UE_LOG(LogMMD4UE4_PmxMeshInfo, Warning, TEXT("PMX Import [Vertex] Complete"));
+
 		////////////////////////////////////////////
 		{
 			/*
@@ -246,19 +247,19 @@ namespace MMD4UE4
 
 			PmxFaceNum /= 3;
 
-			faseList.AddZeroed(PmxFaceNum);
+			faceList.AddZeroed(PmxFaceNum);
 			for (uint32 FaceIndex = 0; FaceIndex < PmxFaceNum; ++FaceIndex)
 			{
-				PMX_FACE & pmxFaseListPtr = faseList[FaceIndex];
-				//
+				PMX_FACE & pmxFaceListPtr = faceList[FaceIndex];
 				for (int SubNum = 0; SubNum < 3; ++SubNum)
 				{
-					pmxFaseListPtr.VertexIndex[SubNum] 
+					pmxFaceListPtr.VertexIndex[SubNum] 
 						= MMDExtendBufferSizeToUint32(&Buffer, this->baseHeader.VertexIndexSize);
 				}
 			}
 		}
 		UE_LOG(LogMMD4UE4_PmxMeshInfo, Warning, TEXT("PMX Import [FaceList] Complete"));
+
 		////////////////////////////////////////////
 		{
 
@@ -279,10 +280,10 @@ namespace MMD4UE4
 			}
 			UE_LOG(LogMMD4UE4_PmxMeshInfo, Warning, TEXT("PMX Import [textureList] Complete"));
 		}
+
 		{
 			// マテリアルの数を取得
 			uint32 PmxMaterialNum = 0;
-			//
 			memcopySize = sizeof(PmxMaterialNum);
 			FMemory::Memcpy(&PmxMaterialNum, Buffer, memcopySize);
 			Buffer += memcopySize;
@@ -294,7 +295,6 @@ namespace MMD4UE4
 			for (uint32 i = 0; i < PmxMaterialNum; i++)
 			{
 				// 材質名の取得
-				//materialList[i].Name = PMXTexBufferToFString(&Buffer, pmxEncodeType);
 				materialList[i].Name = FString::Printf(TEXT("%d_%s"), i, *PMXTexBufferToFString(&Buffer, pmxEncodeType));
 				materialList[i].NameEng = PMXTexBufferToFString(&Buffer, pmxEncodeType);
 
@@ -376,6 +376,7 @@ namespace MMD4UE4
 			}
 			UE_LOG(LogMMD4UE4_PmxMeshInfo, Warning, TEXT("PMX Import [materialList] Complete"));
 		}
+
 		////////////////////////////////////////////
 		{
 			// すべての親BoneをUE4向けに追加
@@ -575,6 +576,8 @@ namespace MMD4UE4
 			}
 			UE_LOG(LogMMD4UE4_PmxMeshInfo, Warning, TEXT("PMX Import [BoneList] Complete"));
 		}
+
+		
 		{
 			int32 i, j;
 			// モーフ情報の数を取得

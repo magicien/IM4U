@@ -173,6 +173,7 @@ UObject* UPmxFactory::FactoryCreateBinary
 			pmxImportResult = PmdMeshInfo.ConvertToPmxFormat(&pmxMeshInfoPtr);
 		}
 	}
+
 	if (!pmxImportResult)
 	{
 		// Log the error message and fail the import.
@@ -180,30 +181,28 @@ UObject* UPmxFactory::FactoryCreateBinary
 		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
 		return NULL;
 	}
-	else
+
+	//モデル読み込み後の警告文表示：コメント欄
+	FText TitleStr = FText::Format(LOCTEXT("ImportReadMe_Generic", "{0}"), FText::FromString("tilesss"));
+	const FText Message
+		= FText::Format(LOCTEXT("ImportReadMe_Generic_Msg",
+		"Important!! \nReadMe Lisence \n modele Name:\n'{0}'\n \n Model Comment JP:\n'{1}'"),
+		FText::FromString(pmxMeshInfoPtr.modelNameJP), FText::FromString(pmxMeshInfoPtr.modelCommentJP));
+	if (EAppReturnType::Ok != FMessageDialog::Open(EAppMsgType::OkCancel, Message))
 	{
-		//モデル読み込み後の警告文表示：コメント欄
-		FText TitleStr = FText::Format(LOCTEXT("ImportReadMe_Generic", "{0}"), FText::FromString("tilesss"));
-		const FText Message
-			= FText::Format(LOCTEXT("ImportReadMe_Generic_Msg",
-			"Important!! \nReadMe Lisence \n modele Name:\n'{0}'\n \n Model Comment JP:\n'{1}'"),
-			FText::FromString(pmxMeshInfoPtr.modelNameJP), FText::FromString(pmxMeshInfoPtr.modelCommentJP));
-		if (EAppReturnType::Ok != FMessageDialog::Open(EAppMsgType::OkCancel, Message))
-		{
-			GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
-			return NULL;
-		}
-		TitleStr = FText::Format(LOCTEXT("ImportReadMe_Generic_Dbg", "{0} 制限事項"), FText::FromString("IM4U Plugin"));
-		const FText MessageDbg
-			= FText(LOCTEXT("ImportReadMe_Generic_Dbg_Msg",
-			"次のImportOption用Slateはまだ実装途中です。\n\
-			Import対象はSkeletonのみ生成可能。\n\
-			現時点で有効なパラメータは、表示されている項目が有効です。") );
-		FMessageDialog::Open(EAppMsgType::Ok, MessageDbg, &TitleStr);
+		GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NULL);
+		return NULL;
 	}
+	TitleStr = FText::Format(LOCTEXT("ImportReadMe_Generic_Dbg", "{0} 制限事項"), FText::FromString("IM4U Plugin"));
+	const FText MessageDbg
+		= FText(LOCTEXT("ImportReadMe_Generic_Dbg_Msg",
+		"次のImportOption用Slateはまだ実装途中です。\n\
+		Import対象はSkeletonのみ生成可能。\n\
+		現時点で有効なパラメータは、表示されている項目が有効です。") );
+	FMessageDialog::Open(EAppMsgType::Ok, MessageDbg, &TitleStr);
 
 	// show Import Option Slate
-	bool bImportAll = false;
+	bool bImportAll = false;  // Unused
 	ImportUI->bIsObjImport = true;//obj mode
 	ImportUI->OriginalImportType = EPMXImportType::PMXIT_SkeletalMesh;
 	PMXImportOptions* ImportOptions
@@ -213,161 +212,154 @@ UObject* UPmxFactory::FactoryCreateBinary
 		true,//bShowImportDialog, 
 		InParent->GetPathName(),
 		bOperationCanceled,
-		bImportAll,
+		bImportAll, // Unused
 		ImportUI->bIsObjImport,//bIsPmxFormat,
 		bIsPmxFormat,
 		ForcedImportType
 		);
-	if (bImportAll)
-	{
-		// If the user chose to import all, we don't show the dialog again and use the same settings for each object until importing another set of files
-		//bShowOption = false;
+	
+	if (!ImportOptions) {
+		const FText errMessage = FText::Format(LOCTEXT("ImportFailed_Generic",
+																								"Failed to import '{0}'. Failed to create asset '{1}'\nMMDモデルの読み込みを中止します。\nIM4U Plugin"),
+																				FText::FromString(*Name.ToString()), FText::FromString(*Name.ToString()));
+		FMessageDialog::Open(EAppMsgType::Ok, errMessage);
+		return NULL;
 	}
 
-	if (ImportOptions)
+	Warn->BeginSlowTask(NSLOCTEXT("PmxFactory", "BeginImportingPmxMeshTask", "Importing Pmx mesh"), true);
 	{
-		Warn->BeginSlowTask(NSLOCTEXT("PmxFactory", "BeginImportingPmxMeshTask", "Importing Pmx mesh"), true);
-		{
-			// For animation and static mesh we assume there is at lease one interesting node by default
-			int32 InterestingNodeCount = 1;
+		// For animation and static mesh we assume there is at lease one interesting node by default
+		int32 InterestingNodeCount = 1;
 
+		if (importAssetTypeMMD == E_MMD_TO_UE4_SKELTON)
+		{
+			InterestingNodeCount = 1;//test ? not Anime?
+		}
+		else if (importAssetTypeMMD == E_MMD_TO_UE4_STATICMESH)
+		{
+
+		}
+
+
+		if (InterestingNodeCount > 1)
+		{
+			// the option only works when there are only one asset
+//				ImportOptions->bUsedAsFullName = false;
+		}
+
+		const FString Filename(UFactory::CurrentFilename);
+		if (InterestingNodeCount > 0)
+		{
+			int32 NodeIndex = 0;
+
+			int32 ImportedMeshCount = 0;
+			UStaticMesh* NewStaticMesh = NULL;
+			if (importAssetTypeMMD == E_MMD_TO_UE4_STATICMESH)  // static mesh
+			{
+			}
+			else if (importAssetTypeMMD == E_MMD_TO_UE4_SKELTON)// skeletal mesh
+			{
+				int32 TotalNumNodes = 0;
+
+				//for (int32 i = 0; i < SkelMeshArray.Num(); i++)
+				for (int32 i = 0; i < 1/*SkelMeshArray.Num()*/; i++)
+				{
+					int32 LODIndex=0;
+
+					// for MMD?
+					int32 MaxLODLevel = 1;
+					
+					if (LODIndex == 0 /*&& SkelMeshNodeArray.Num() != 0*/)
+					{
+						FName OutputName = FName(*FString::Printf(TEXT("%s"), *Name.ToString() ));// FbxImporter->MakeNameForMesh(Name.ToString(), SkelMeshNodeArray[0]);
+
+						USkeletalMesh* NewMesh = NULL;
+						NewMesh = ImportSkeletalMesh(
+							InParent,
+							&pmxMeshInfoPtr,//SkelMeshNodeArray,
+							OutputName,
+							Flags,
+							//ImportUI->SkeletalMeshImportData,
+							FPaths::GetBaseFilename(Filename),
+							NULL,// test for MMD,
+							true
+							);
+
+						NewObject = NewMesh;
+					}
+
+					// import morph target
+					if (NewObject && ImportUI->SkeletalMeshImportData->bImportMorphTargets)
+					{
+						// Disable material importing when importing morph targets
+						uint32 bImportMaterials = ImportOptions->bImportMaterials;
+						ImportOptions->bImportMaterials = 0;
+
+						ImportFbxMorphTarget(
+							//SkelMeshNodeArray, 
+							pmxMeshInfoPtr,
+							Cast<USkeletalMesh>(NewObject),
+							InParent, 
+							Filename, 
+							LODIndex
+							);
+
+						ImportOptions->bImportMaterials = !!bImportMaterials;
+					}
+
+					//add self
+					if (NewObject)
+					{
+						//MMD Extend asset
+						CreateMMDExtendFromMMDModel(
+							InParent,
+							//FName(*NewObject->GetName()),
+							Cast<USkeletalMesh>(NewObject),
+							&pmxMeshInfoPtr
+							);
+
+					}
+
+					//end phese
+					if (NewObject)
+					{
+						TotalNumNodes++;
+						NodeIndex++;
+						FFormatNamedArguments Args;
+						Args.Add(TEXT("NodeIndex"), NodeIndex);
+						Args.Add(TEXT("ArrayLength"), 1);// SkelMeshArray.Num());
+						GWarn->StatusUpdate(NodeIndex, 1/*SkelMeshArray.Num()*/, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
+					}
+				}
+				// if total nodes we found is 0, we didn't find anything. 
+				if (TotalNumNodes == 0)
+				{
+					AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_NoMeshFoundOnRoot", "Could not find any valid mesh on the root hierarchy. If you have mesh in the sub hierarchy, please enable option of [Import Meshes In Bone Hierarchy] when import.")),
+						FFbxErrors::SkeletalMesh_NoMeshFoundOnRoot);
+				}
+			}
+		}
+		else
+		{
 			if (importAssetTypeMMD == E_MMD_TO_UE4_SKELTON)
 			{
-				InterestingNodeCount = 1;//test ? not Anime?
-			}
-			else if (importAssetTypeMMD == E_MMD_TO_UE4_STATICMESH)
-			{
-
-			}
-
-
-			if (InterestingNodeCount > 1)
-			{
-				// the option only works when there are only one asset
-//				ImportOptions->bUsedAsFullName = false;
-			}
-
-			const FString Filename(UFactory::CurrentFilename);
-			if (InterestingNodeCount > 0)
-			{
-				int32 NodeIndex = 0;
-
-				int32 ImportedMeshCount = 0;
-				UStaticMesh* NewStaticMesh = NULL;
-				if (importAssetTypeMMD == E_MMD_TO_UE4_STATICMESH)  // static mesh
-				{
-				}
-				else if (importAssetTypeMMD == E_MMD_TO_UE4_SKELTON)// skeletal mesh
-				{
-					int32 TotalNumNodes = 0;
-
-					//for (int32 i = 0; i < SkelMeshArray.Num(); i++)
-					for (int32 i = 0; i < 1/*SkelMeshArray.Num()*/; i++)
-					{
-						int32 LODIndex=0;
-
-						// for MMD?
-						int32 MaxLODLevel = 1;
-						
-						if (LODIndex == 0 /*&& SkelMeshNodeArray.Num() != 0*/)
-						{
-							FName OutputName = FName(*FString::Printf(TEXT("%s"), *Name.ToString() ));// FbxImporter->MakeNameForMesh(Name.ToString(), SkelMeshNodeArray[0]);
-
-							USkeletalMesh* NewMesh = NULL;
-							NewMesh = ImportSkeletalMesh(
-								InParent,
-								&pmxMeshInfoPtr,//SkelMeshNodeArray,
-								OutputName,
-								Flags,
-								//ImportUI->SkeletalMeshImportData,
-								FPaths::GetBaseFilename(Filename),
-								NULL,// test for MMD,
-								true
-								);
-							NewObject = NewMesh;
-						}
-
-						// import morph target
-						if (NewObject && ImportUI->SkeletalMeshImportData->bImportMorphTargets)
-						{
-							// Disable material importing when importing morph targets
-							uint32 bImportMaterials = ImportOptions->bImportMaterials;
-							ImportOptions->bImportMaterials = 0;
-
-							/*FbxImporter->*/ImportFbxMorphTarget(
-								//SkelMeshNodeArray, 
-								pmxMeshInfoPtr,
-								Cast<USkeletalMesh>(NewObject),
-								InParent, 
-								Filename, 
-								LODIndex
-								);
-
-							ImportOptions->bImportMaterials = !!bImportMaterials;
-						}
-
-						//add self
-						if (NewObject)
-						{
-							//MMD Extend asset
-							CreateMMDExtendFromMMDModel(
-								InParent,
-								//FName(*NewObject->GetName()),
-								Cast<USkeletalMesh>(NewObject),
-								&pmxMeshInfoPtr
-								);
-
-						}
-
-						//end phese
-						if (NewObject)
-						{
-							TotalNumNodes++;
-							NodeIndex++;
-							FFormatNamedArguments Args;
-							Args.Add(TEXT("NodeIndex"), NodeIndex);
-							Args.Add(TEXT("ArrayLength"), 1);// SkelMeshArray.Num());
-							GWarn->StatusUpdate(NodeIndex, 1/*SkelMeshArray.Num()*/, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
-						}
-					}
-					// if total nodes we found is 0, we didn't find anything. 
-					if (TotalNumNodes == 0)
-					{
-						AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_NoMeshFoundOnRoot", "Could not find any valid mesh on the root hierarchy. If you have mesh in the sub hierarchy, please enable option of [Import Meshes In Bone Hierarchy] when import.")),
-							FFbxErrors::SkeletalMesh_NoMeshFoundOnRoot);
-					}
-				}
+				AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_InvalidBone", "Failed to find any bone hierarchy. Try disabling the \"Import As Skeletal\" option to import as a rigid mesh. ")), FFbxErrors::SkeletalMesh_InvalidBone);
 			}
 			else
 			{
-				if (importAssetTypeMMD == E_MMD_TO_UE4_SKELTON)
-				{
-					AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_InvalidBone", "Failed to find any bone hierarchy. Try disabling the \"Import As Skeletal\" option to import as a rigid mesh. ")), FFbxErrors::SkeletalMesh_InvalidBone);
-				}
-				else
-				{
-					AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_InvalidNode", "Could not find any node.")), FFbxErrors::SkeletalMesh_InvalidNode);
-				}
+				AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_InvalidNode", "Could not find any node.")), FFbxErrors::SkeletalMesh_InvalidNode);
 			}
 		}
-
-		if (NewObject == NULL)
-		{
-			AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_NoObject", "Import failed.")), FFbxErrors::Generic_ImportingNewObjectFailed);
-			Warn->Log(ELogVerbosity::Error, "PMX Import ERR [NewObject is NULL]...FLT");
-		}
-
-		Warn->EndSlowTask();
 	}
-	else
+
+	if (NewObject == NULL)
 	{
-		const FText Message 
-			= FText::Format(LOCTEXT("ImportFailed_Generic", 
-				"Failed to import '{0}'. Failed to create asset '{1}'\nMMDモデルの読み込みを中止します。\nIM4U Plugin"),
-				FText::FromString(*Name.ToString()), FText::FromString(*Name.ToString()));
-		FMessageDialog::Open(EAppMsgType::Ok, Message);
-		//UE_LOG(LogAssetTools, Warning, TEXT("%s"), *Message.ToString());
+		AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Error, LOCTEXT("FailedToImport_NoObject", "Import failed.")), FFbxErrors::Generic_ImportingNewObjectFailed);
+		Warn->Log(ELogVerbosity::Error, "PMX Import ERR [NewObject is NULL]...FLT");
 	}
+
+	Warn->EndSlowTask();
+
 
 	GEditor->GetEditorSubsystem<UImportSubsystem>()->OnAssetPostImport.Broadcast(this, NewObject);
 
@@ -391,30 +383,23 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 	bool bDiffPose;
 	int32 SkelType = 0; // 0 for skeletal mesh, 1 for rigid mesh
 
-	//bool bCreateRenderData = true;
 	struct ExistingSkelMeshData* ExistSkelMeshDataPtr = NULL;
 
-	if (true /*!FbxShapeArray*/)
+	UObject* ExistingObject = StaticFindObjectFast(UObject::StaticClass(), InParent, *Name.ToString(), false, false, EObjectFlags::RF_NoFlags, EInternalObjectFlags::PendingKill); //UE4.11-
+	USkeletalMesh* ExistingSkelMesh = Cast<USkeletalMesh>(ExistingObject);
+
+	if (ExistingSkelMesh)
 	{
-		//UObject* ExistingObject = StaticFindObjectFast(UObject::StaticClass(), InParent, *Name.ToString(), false, false, RF_PendingKill);//~UE4.10
-		UObject* ExistingObject = StaticFindObjectFast(UObject::StaticClass(), InParent, *Name.ToString(), false, false, EObjectFlags::RF_NoFlags, EInternalObjectFlags::PendingKill);//UE4.11~
-		USkeletalMesh* ExistingSkelMesh = Cast<USkeletalMesh>(ExistingObject);
-
-		if (ExistingSkelMesh)
-		{
-
-			ExistingSkelMesh->PreEditChange(NULL);
-			//ExistSkelMeshDataPtr = SaveExistingSkelMeshData(ExistingSkelMesh);
-		}
-		// if any other object exists, we can't import with this name
-		else if (ExistingObject)
-		{
-			AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Warning, FText::Format(LOCTEXT("FbxSkeletaLMeshimport_OverlappingName", "Same name but different class: '{0}' already exists"), FText::FromString(ExistingObject->GetName()))), FFbxErrors::Generic_SameNameAssetExists);
-			return NULL;
-		}
+		ExistingSkelMesh->PreEditChange(NULL);
+		//ExistSkelMeshDataPtr = SaveExistingSkelMeshData(ExistingSkelMesh);
+	}
+	// if any other object exists, we can't import with this name
+	else if (ExistingObject)
+	{
+		AddTokenizedErrorMessage(FTokenizedMessage::Create(EMessageSeverity::Warning, FText::Format(LOCTEXT("FbxSkeletaLMeshimport_OverlappingName", "Same name but different class: '{0}' already exists"), FText::FromString(ExistingObject->GetName()))), FFbxErrors::Generic_SameNameAssetExists);
+		return NULL;
 	}
 
-	// [from USkeletalMeshFactory::FactoryCreateBinary]
 	USkeletalMesh* SkeletalMesh = NewObject<USkeletalMesh>(InParent, Name, Flags);
 
 	SkeletalMesh->PreEditChange(NULL);
@@ -441,8 +426,6 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 			bDiffPose, 
 			false,//(FbxShapeArray != NULL),
 			bUseTime0AsRefPose)
-			
-			/*false*/
 		)
 	{
 		AddTokenizedErrorMessage(FTokenizedMessage::Create(
@@ -464,20 +447,13 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 		SkeletalMeshImportData::FMaterial NewMaterial;
 		SkelMeshImportDataPtr->Materials.Add(NewMaterial);
 	}
-	// NOTE: This function may invalidate FbxMesh and set it to point to a an updated version
+	// NOTE: This function may invalidate FbxMesh and set it to point to an updated version
 	if (
 		!FillSkelMeshImporterFromFbx(
 			*SkelMeshImportDataPtr,
 			pmxMeshInfoPtr
-			/*
-			FbxMesh,
-			Skin, 
-			FbxShape,
-			SortedLinkArray, 
-			FbxMaterials*/
 			)
 		)
-		/*false*/
 	{
 		// I can't delete object here since this is middle of import
 		// but I can move to transient package, and GC will automatically collect it
@@ -486,11 +462,11 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 		return NULL;
 	}
 
-		SkelMeshImportDataPtr->PointToRawMap.AddUninitialized(SkelMeshImportDataPtr->Points.Num());
-		for (int32 PointIdx = 0; PointIdx<SkelMeshImportDataPtr->Points.Num(); PointIdx++)
-		{
-			SkelMeshImportDataPtr->PointToRawMap[PointIdx] = PointIdx;
-		}
+	SkelMeshImportDataPtr->PointToRawMap.AddUninitialized(SkelMeshImportDataPtr->Points.Num());
+	for (int32 PointIdx = 0; PointIdx<SkelMeshImportDataPtr->Points.Num(); PointIdx++)
+	{
+		SkelMeshImportDataPtr->PointToRawMap[PointIdx] = PointIdx;
+	}
 
 	// process materials from import data
 	ProcessImportMeshMaterials(SkeletalMesh->Materials, *SkelMeshImportDataPtr);
@@ -595,7 +571,7 @@ USkeletalMesh* UPmxFactory::ImportSkeletalMesh(
 		const int32 NumSections = LODModel.Sections.Num();
 		for (int32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
 		{
-			SkeletalMesh->GetLODInfo(0)->LODMaterialMap.Add(0);
+			SkeletalMesh->GetLODInfo(0)->LODMaterialMap.Add(SectionIndex);
 		}
 
 		SkeletalMesh->AssetImportData->Update(UFactory::CurrentFilename);

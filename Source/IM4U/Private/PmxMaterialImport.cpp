@@ -1076,7 +1076,7 @@ UMaterialInterface* UPmxMaterialImport::CreateMaterialInst_Masked(
 
 	if(pUMIC->BasePropertyOverrides.TwoSided != PmxMaterial.CullingOff)
 	{
-		// TowSide有効の場合はONにする 
+		// TwoSide有効の場合はONにする 
 		pUMIC->BasePropertyOverrides.TwoSided = PmxMaterial.CullingOff;
 		pUMIC->BasePropertyOverrides.bOverride_TwoSided = true;
 		pUMIC->UpdateOverridableBaseProperties(); // OverrideParam Update
@@ -1176,7 +1176,7 @@ UMaterialInterface* UPmxMaterialImport::CreateMaterialInst_Masked_Unlit(
 
 	if (pUMIC->BasePropertyOverrides.TwoSided != PmxMaterial.CullingOff)
 	{
-		// TowSide有効の場合はONにする 
+		// TwoSide有効の場合はONにする 
 		pUMIC->BasePropertyOverrides.TwoSided = PmxMaterial.CullingOff;
 		pUMIC->BasePropertyOverrides.bOverride_TwoSided = true;
 		pUMIC->UpdateOverridableBaseProperties(); // OverrideParam Update
@@ -1289,7 +1289,7 @@ UMaterialInterface* UPmxMaterialImport::CreateMaterialInst_Luminous(
 
 	if (pUMIC->BasePropertyOverrides.TwoSided != PmxMaterial.CullingOff)
 	{
-		// TowSide有効の場合はONにする 
+		// TwoSide有効の場合はONにする 
 		pUMIC->BasePropertyOverrides.TwoSided = PmxMaterial.CullingOff;
 		pUMIC->BasePropertyOverrides.bOverride_TwoSided = true;
 		pUMIC->UpdateOverridableBaseProperties(); // OverrideParam Update
@@ -1402,7 +1402,7 @@ UMaterialInterface* UPmxMaterialImport::CreateMaterialInst_Luminous_Unlit(
 
 	if (pUMIC->BasePropertyOverrides.TwoSided != PmxMaterial.CullingOff)
 	{
-		// TowSide有効の場合はONにする 
+		// TwoSide有効の場合はONにする 
 		pUMIC->BasePropertyOverrides.TwoSided = PmxMaterial.CullingOff;
 		pUMIC->BasePropertyOverrides.bOverride_TwoSided = true;
 		pUMIC->UpdateOverridableBaseProperties(); // OverrideParam Update

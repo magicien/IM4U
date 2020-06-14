@@ -294,15 +294,15 @@ namespace MMD4UE4
 			PmxFaceNum = faceData.VertexCount;
 			PmxFaceNum /= 3;
 
-			pmxMeshInfoPtr->faseList.AddZeroed(PmxFaceNum);
+			pmxMeshInfoPtr->faceList.AddZeroed(PmxFaceNum);
 			for (uint32 FaceIndex = 0; FaceIndex < PmxFaceNum; ++FaceIndex)
 			{
 				PMD_FACE & pmdFaceListPtr = faceList[FaceIndex];
-				PMX_FACE & pmxFaseListPtr = pmxMeshInfoPtr->faseList[FaceIndex];
+				PMX_FACE & pmxFaceListPtr = pmxMeshInfoPtr->faceList[FaceIndex];
 				//
 				for (int SubNum = 0; SubNum < 3; ++SubNum)
 				{
-					pmxFaseListPtr.VertexIndex[SubNum]
+					pmxFaceListPtr.VertexIndex[SubNum]
 						= pmdFaceListPtr.VertexIndx[SubNum];
 				}
 			}

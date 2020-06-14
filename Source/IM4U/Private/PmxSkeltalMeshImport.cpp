@@ -262,8 +262,6 @@ bool UPmxFactory::ImportBone(
 		// Add a bone for each FBX Link
 		ImportData.RefBonesBinary.Add(SkeletalMeshImportData::FBone());
 
-		//Link = SortedLinks[LinkIndex];
-
 		// get the link parent and children
 		int32 ParentIndex = INDEX_NONE; // base value for root if no parent found
 		int32 LinkParent = PmxMeshInfo->boneList[LinkIndex].ParentBoneIndex;
@@ -349,42 +347,22 @@ bool UPmxFactory::ImportBone(
 bool UPmxFactory::FillSkelMeshImporterFromFbx(
 	FSkeletalMeshImportData& ImportData,
 	MMD4UE4::PmxMeshInfo *& PmxMeshInfo
-	//FbxMesh*& Mesh,
-	//FbxSkin* Skin,
-	//FbxShape* FbxShape,
-	//TArray<FbxNode*> &SortedLinks,
-	//const TArray<FbxSurfaceMaterial*>& FbxMaterials
 	)
 {
 	TArray<UMaterialInterface*> Materials;
 
-	////////
 	TArray<UTexture*> textureAssetList;
 	if (ImportUI->bImportTextures)
 	{
 		for (int k = 0; k < PmxMeshInfo->textureList.Num(); ++k)
 		{
 			pmxMaterialImportHelper.AssetsCreateTextuer(
-				//InParent,
-				//Flags,
-				//Warn,
 				FPaths::GetPath(GetCurrentFilename()),
 				PmxMeshInfo->textureList[k].TexturePath,
 				textureAssetList
 				);
-
-			//if (NewObject)
-			/*{
-				NodeIndex++;
-				FFormatNamedArguments Args;
-				Args.Add(TEXT("NodeIndex"), NodeIndex);
-				Args.Add(TEXT("ArrayLength"), NodeIndexMax);// SkelMeshArray.Num());
-				GWarn->StatusUpdate(NodeIndex, NodeIndexMax, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
-				}*/
 		}
 	}
-	//UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMX Import Texture Extecd Complete."));
-	////////////////////////////////////////////
 
 	TArray<FString> UVSets;
 	if (ImportUI->bImportMaterials)
@@ -393,43 +371,30 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 		{
 			pmxMaterialImportHelper.CreateUnrealMaterial(
 				PmxMeshInfo->modelNameJP,
-				//InParent,
 				PmxMeshInfo->materialList[k],
 				ImportUI->bCreateMaterialInstMode,
 				ImportUI->bUnlitMaterials,
 				Materials,
 				textureAssetList);
-			//if (NewObject)
-			/*{
-				NodeIndex++;
-				FFormatNamedArguments Args;
-				Args.Add(TEXT("NodeIndex"), NodeIndex);
-				Args.Add(TEXT("ArrayLength"), NodeIndexMax);// SkelMeshArray.Num());
-				GWarn->StatusUpdate(NodeIndex, NodeIndexMax, FText::Format(NSLOCTEXT("UnrealEd", "Importingf", "Importing ({NodeIndex} of {ArrayLength})"), Args));
-				}*/
+
+			int ExistingMatIndex = k;
+			int MaterialIndex = k;
+
+			// material asset set flag for morph target 
+			if (ImportUI->bImportMorphTargets)
 			{
-				int ExistingMatIndex = k;
-				int MaterialIndex = k;
-
-				// material asset set flag for morph target 
-				if (ImportUI->bImportMorphTargets)
+				if (UMaterial* UnrealMaterialPtr = Cast<UMaterial>(Materials[MaterialIndex]))
 				{
-					if (UMaterial* UnrealMaterialPtr = Cast<UMaterial>(Materials[MaterialIndex]))
-					{
-						UnrealMaterialPtr->bUsedWithMorphTargets = 1;
-					}
+					UnrealMaterialPtr->bUsedWithMorphTargets = 1;
 				}
-
-				ImportData.Materials[ExistingMatIndex].MaterialImportName
-					= "M_" + PmxMeshInfo->materialList[k].Name;
-				ImportData.Materials[ExistingMatIndex].Material
-					= Materials[MaterialIndex];
 			}
+
+			ImportData.Materials[ExistingMatIndex].MaterialImportName
+				= "M_" + PmxMeshInfo->materialList[k].Name;
+			ImportData.Materials[ExistingMatIndex].Material
+				= Materials[MaterialIndex];
 		}
 	}
-	///////////////////////////////////////////
-	//UE_LOG(LogCategoryPMXFactory, Warning, TEXT("PMX Import Material Extecd Complete."));
-	///////////////////////////////////////////
 
 	//
 	//	store the UVs in arrays for fast access in the later looping of triangles 
@@ -461,10 +426,11 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 	bool OddNegativeScale = true;// false;// IsOddNegativeScale(TotalMatrix);
 
 	int32 VertexIndex;
-	int32 TriangleCount = PmxMeshInfo->faseList.Num();//Mesh->GetPolygonCount();
+	int32 TriangleCount = PmxMeshInfo->faceList.Num();//Mesh->GetPolygonCount();
 	int32 ExistFaceNum = ImportData.Faces.Num();
 	ImportData.Faces.AddUninitialized(TriangleCount);
 	int32 ExistWedgesNum = ImportData.Wedges.Num();
+
 	SkeletalMeshImportData::FVertex TmpWedges[3];
 
 	int32 facecount =0;
@@ -472,7 +438,6 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 
 	for (int32 TriangleIndex = ExistFaceNum, LocalIndex = 0; TriangleIndex < ExistFaceNum + TriangleCount; TriangleIndex++, LocalIndex++)
 	{
-
 		SkeletalMeshImportData::FTriangle& Triangle = ImportData.Faces[TriangleIndex];
 
 		//
@@ -489,7 +454,7 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 			int32 NormalIndex = UnrealVertexIndex;
 
 			FVector TangentZ 
-				= PmxMeshInfo->vertexList[PmxMeshInfo->faseList[LocalIndex].VertexIndex[NormalIndex]].Normal;
+				= PmxMeshInfo->vertexList[PmxMeshInfo->faceList[LocalIndex].VertexIndex[NormalIndex]].Normal;
 
 			Triangle.TangentX[NormalIndex] = FVector::ZeroVector;
 			Triangle.TangentY[NormalIndex] = FVector::ZeroVector;
@@ -522,8 +487,7 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 
 			TmpWedges[UnrealVertexIndex].MatIndex = Triangle.MatIndex;
 			TmpWedges[UnrealVertexIndex].VertexIndex
-				= PmxMeshInfo->faseList[LocalIndex].VertexIndex[VertexIndex];
-				// = ExistPointNum + Mesh->GetPolygonVertex(LocalIndex, VertexIndex);
+				= PmxMeshInfo->faceList[LocalIndex].VertexIndex[VertexIndex];
 			// Initialize all colors to white.
 			TmpWedges[UnrealVertexIndex].Color = FColor::White;
 		}
@@ -640,7 +604,7 @@ bool UPmxFactory::FillSkelMeshImporterFromFbx(
 					ImportData.Influences.Last().Weight = PmxMeshInfo->vertexList[ControlPointIndex].BoneWeight[0];
 					ImportData.Influences.Last().VertexIndex = ExistPointNum + ControlPointIndex;
 					UE_LOG(LogMMD4UE4_PMXFactory, Error, 
-						TEXT("Unkown Weight Type :: type = %d , vertex index = %d "), 
+						TEXT("Unknown Weight Type :: type = %d , vertex index = %d "), 
 						PmxMeshInfo->vertexList[ControlPointIndex].WeightType
 						, ControlPointIndex
 						);

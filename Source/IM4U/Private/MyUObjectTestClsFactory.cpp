@@ -342,7 +342,7 @@ void UMyUObjectTestClsFactory::GetBrushMesh(
 
 	int32 matIndx = 0;
 	int32 facecount = 0;
-	for (int32 i = 0; i < pmxMeshInfoPtr->faseList.Num(); ++i)
+	for (int32 i = 0; i < pmxMeshInfoPtr->faceList.Num(); ++i)
 	{
 		UMaterialInterface*	Material = 0;// Polygon.Material;
 		int32 MaterialIndex = 0;
@@ -365,9 +365,9 @@ void UMyUObjectTestClsFactory::GetBrushMesh(
 			for (int k = 0; k < 3; ++k)
 			{
 				//int k = 2;
-				OutMesh.WedgeIndices.Add(pmxMeshInfoPtr->faseList[i].VertexIndex[k]);
-				OutMesh.WedgeTexCoords[0].Add(pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faseList[i].VertexIndex[k]].UV);
-				FVector TangentZ = pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faseList[i].VertexIndex[k]].Normal;
+				OutMesh.WedgeIndices.Add(pmxMeshInfoPtr->faceList[i].VertexIndex[k]);
+				OutMesh.WedgeTexCoords[0].Add(pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faceList[i].VertexIndex[k]].UV);
+				FVector TangentZ = pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faceList[i].VertexIndex[k]].Normal;
 				OutMesh.WedgeTangentZ.Add(TangentZ.GetSafeNormal());
 				facecount++;
 			}
@@ -376,9 +376,9 @@ void UMyUObjectTestClsFactory::GetBrushMesh(
 		{
 			for (int k = 2; k > -1; --k)
 			{
-				OutMesh.WedgeIndices.Add(pmxMeshInfoPtr->faseList[i].VertexIndex[k]);
-				OutMesh.WedgeTexCoords[0].Add(pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faseList[i].VertexIndex[k]].UV);
-				FVector TangentZ = pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faseList[i].VertexIndex[k]].Normal;
+				OutMesh.WedgeIndices.Add(pmxMeshInfoPtr->faceList[i].VertexIndex[k]);
+				OutMesh.WedgeTexCoords[0].Add(pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faceList[i].VertexIndex[k]].UV);
+				FVector TangentZ = pmxMeshInfoPtr->vertexList[pmxMeshInfoPtr->faceList[i].VertexIndex[k]].Normal;
 				OutMesh.WedgeTangentZ.Add(TangentZ.GetSafeNormal());
 				facecount++;
 			}
